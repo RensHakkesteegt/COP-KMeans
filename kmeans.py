@@ -9,6 +9,11 @@ from math import sqrt
 import matplotlib.pyplot as plt
 
 def firstRandomClusters(points,k):
+    """
+    Select K random points to work as cluster centers
+    """
+    
+    
     randomClusters = []
     copyPoints = points.copy()
     for i in range(k):
@@ -22,27 +27,47 @@ def firstRandomClusters(points,k):
     return randomClusters
 
 
-def assignPoints(points,centers):
+def assignPoints(points,centers,mustLinkConstraints,cannotLinkConstraints):
+    """
+    Assign each point to the closest cluster, without breaking constraints.
+    """
+    
     pointsAssign = []
+    assignedPoints = []
+    pointsPerCluster = []
+    for cluster in range(len(centers)):
+        pointsPerCluster.append([])
     
     for i in range(len(points)):
         minVar = float("inf")
         goodCenter = 0
+        assignedPoint =False
         for j in range(len(centers)):
             distCenter = distanceBetweenPoints(points[i],centers[j])
-            if minVar > distCenter:
+            if minVar > distCenter and not violateConstraints(points[i],pointsPerCluster[j],mustLinkConstraints,cannotLinkConstraints,assignedPoints):
                 minVar = distCenter
                 goodCenter = j
+                pointsPerCluster[j].append(points[i])
+                assignedPoints.append(points[i])
+                assignedPoint = True
+                
+        if not assignedPoint:
+            print("failed")
+            return False
         pointsAssign.append(goodCenter)
     return pointsAssign
 
 def distanceBetweenPoints(pointA,pointB):
+    """
+    Calculate the Euclidian distance between two points.
+    """
+    
     
     if (len(pointA) != len(pointB)):
         print(pointA)
         print(pointB)
         print("The dimensions are wrong here")        
-        
+        return "ERROR"
 
     numberOfDimensions = len(pointA)
     totalSum = 0
@@ -53,6 +78,10 @@ def distanceBetweenPoints(pointA,pointB):
     return sqrt(totalSum)
 
 def meanOfListOfPoints(points):
+    """
+    Input is an array of points. We find the mean for each dimension. Output is a single point.
+    """
+    
     meanPoint = []
    
     for dimension in range(len(points[0])):
@@ -64,35 +93,85 @@ def meanOfListOfPoints(points):
         
     return meanPoint
 
-def updateClusterCenters(points,assigns,clusters):
+def updateClusterCenters(points,assigns,clusters,draw=False):
+    """
+    Old clusters centers go in. New assignments go in. All the points of the dataset go in.
+    If draw is True we draw the current partition.
+    """
+    
     pointsPerCluster = []
     
     for cluster in range(len(clusters)):
         pointsPerCluster.append([])
         clusterPoints = [points[index] for index, value in enumerate(assigns) if value == cluster]
         pointsPerCluster[cluster] = clusterPoints
-        if len(clusterPoints)>0:
-            x, y = zip(*clusterPoints)
-            plt.scatter(x,y,color="C"+str(cluster))
-
-        x, y = zip(*clusters)
-        plt.scatter(x,y,marker="+",color="red",s=100)
-    plt.show()  
+        
+        if draw:
+            if len(clusterPoints)>0:
+                x, y = zip(*clusterPoints)
+                plt.scatter(x,y,color="C"+str(cluster))
+    
+            x, y = zip(*clusters)
+            plt.scatter(x,y,marker="+",color="red",s=100)
+    if draw:
+        plt.show()
+        
     for i in range(len(pointsPerCluster)):
        
         if(len(pointsPerCluster[i])>0):
           clusters[i] = meanOfListOfPoints(pointsPerCluster[i])
+
+def violateConstraints(newPoint,pointsInCluster,mustLinkConstraints,cannotLinkConstraints,alreadyAssignedPoints):
+    
+    
+    for constraint in mustLinkConstraints:
+        found = False
+        if constraint[0] == newPoint:
+            if constraint[1] in alreadyAssignedPoints:
+                if constraint[1] in pointsInCluster:
+                        found = True
+                if not found:
+                    return True
+        if constraint[1] == newPoint:
+            if constraint[0] in alreadyAssignedPoints:
+                if constraint[0] in pointsInCluster:
+                        found = True
+                if not found:
+                    return True
         
-def kpoints(points,k,maxRuns = 100):
+
+    for constraint in cannotLinkConstraints:
+        foundCannot = False
+        if constraint[0] == newPoint:
+            for point in pointsInCluster:               
+                if constraint[1] == point:
+                    foundCannot = True
+        if constraint[1] == newPoint:
+            for point in point0sInCluster:               
+                if constraint[1] == point:
+                    foundCannot = True
+        if foundCannot:
+            return True
+    
+    return False
+        
+def kpoints(points,k,maxRuns = 100,draw=False,mustLinkConstraints = [],cannotLinkConstraints = []):
+    """
+    Main function, Points and K are not optional. MaxRuns and draw are optional.
+    MaxRuns is the total number of iterations the algorithm is allowed to do.
+    If draw is True the algorithm will output the plot of each iteration.
+    """
+    
     clusters = firstRandomClusters(points,k)
-    newAssignments = assignPoints(points,clusters)
+    newAssignments = assignPoints(points,clusters,mustLinkConstraints,cannotLinkConstraints)
     oldAssignments = None
     runs = 0
+    
     while (runs != maxRuns and oldAssignments != newAssignments):
         oldAssignments=newAssignments
-        updateClusterCenters(points,newAssignments,clusters)
+        updateClusterCenters(points,newAssignments,clusters,draw)
         
-        newAssignments = (assignPoints(points,clusters))
+        newAssignments = (assignPoints(points,clusters,mustLinkConstraints,cannotLinkConstraints))
         runs += 1
     
     
@@ -104,5 +183,6 @@ points = [[105,197],[193,11],[156,116],[166,44],[63,162],[86,71],[174,25],[174,1
 ]
 
 
-
-assigns = kpoints(points,3)
+mustLinkConstraint = [[[105,197],[86,71]],[[105,197],[5,24]],[[105,197],[44,197]]]
+cannotLinkConstraint = [[166,44],[44,197]]
+assigns = kpoints(points,3,draw=True,mustLinkConstraints= mustLinkConstraint,cannotLinkConstraints=cannotLinkConstraint)
