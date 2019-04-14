@@ -1,4 +1,4 @@
-# Project Title
+# COP-KMEANS Python implementation
 
 This python project is an implementation of the COP-KMEANS algorithm described in the paper "Constrained K-means Clustering with Background Knowledge". This code isn't optimized, I wrote it to get a better sense of the effect it has on clusters the algorithm makes with added constraints.
 The described algorithm in the paper doesn't exactly explain how it selects the initial cluster centers so I went with random selection.
