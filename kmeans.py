@@ -122,6 +122,10 @@ def updateClusterCenters(points,assigns,clusters,draw=False):
           clusters[i] = meanOfListOfPoints(pointsPerCluster[i])
 
 def violateConstraints(newPoint,pointsInCluster,mustLinkConstraints,cannotLinkConstraints,alreadyAssignedPoints):
+    """
+    Checks if a newPoints has a mustlink constraint. If it does it checks if the point it needs to be linked to is already assigned in a cluster. If it is check if is in this cluster. If it is continue, else return true.
+    After that check if cannot link constraint in a cluster is violated.
+    """
     
     
     for constraint in mustLinkConstraints:
@@ -147,7 +151,7 @@ def violateConstraints(newPoint,pointsInCluster,mustLinkConstraints,cannotLinkCo
                 if constraint[1] == point:
                     foundCannot = True
         if constraint[1] == newPoint:
-            for point in point0sInCluster:               
+            for point in pointsInCluster:               
                 if constraint[1] == point:
                     foundCannot = True
         if foundCannot:
@@ -184,5 +188,5 @@ points = [[105,197],[193,11],[156,116],[166,44],[63,162],[86,71],[174,25],[174,1
 
 
 mustLinkConstraint = [[[105,197],[86,71]],[[105,197],[5,24]],[[105,197],[44,197]]]
-cannotLinkConstraint = [[166,44],[44,197]]
+cannotLinkConstraint = [[52,59],[11,88],[[63,162],[86,71]]]
 assigns = kpoints(points,3,draw=True,mustLinkConstraints= mustLinkConstraint,cannotLinkConstraints=cannotLinkConstraint)
